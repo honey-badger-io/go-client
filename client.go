@@ -3,28 +3,31 @@ package hb
 import (
 	"context"
 
-	"github.com/honey-badger-io/go-client/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Client struct {
 	conn *grpc.ClientConn
-	sys  pb.SysClient
-	data *Data
+	sys  SysClient
+	data DataClient
 }
 
-func (c *Client) Data() *Data {
+func (c *Client) Data() DataClient {
 	return c.data
 }
 
 func (c *Client) Ping(ctx context.Context) (string, error) {
-	res, err := c.sys.Ping(ctx, &pb.PingRequest{})
+	res, err := c.sys.Ping(ctx, &PingRequest{})
 	if err != nil {
 		return "", err
 	}
 
 	return res.Mesage, nil
+}
+
+func (c *Client) Close() error {
+	return c.conn.Close()
 }
 
 func NewClient(target string) (*Client, error) {
@@ -33,13 +36,9 @@ func NewClient(target string) (*Client, error) {
 		return nil, err
 	}
 
-	data := &Data{
-		grpc: pb.NewDataClient(conn),
-	}
-
 	client := &Client{
-		sys:  pb.NewSysClient(conn),
-		data: data,
+		sys:  NewSysClient(conn),
+		data: NewDataClient(conn),
 		conn: conn,
 	}
 

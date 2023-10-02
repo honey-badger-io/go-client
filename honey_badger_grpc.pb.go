@@ -4,7 +4,7 @@
 // - protoc             v4.24.3
 // source: honey_badger.proto
 
-package pb
+package hb
 
 import (
 	context "context"

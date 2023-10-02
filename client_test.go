@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/honey-badger-io/go-client/pb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,6 +17,7 @@ func TestPing(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	defer client.Close()
 
 	t.Run("should call Ping", func(t *testing.T) {
 		msg, err := client.Ping(context.TODO())
@@ -32,9 +32,10 @@ func TestSet(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	defer client.Close()
 
 	t.Run("should set bytes", func(t *testing.T) {
-		err := client.Data().Set(context.TODO(), &pb.SetRequest{
+		_, err := client.Data().Set(context.TODO(), &SetRequest{
 			Db:   Db,
 			Key:  "set-bytes",
 			Data: make([]byte, 1),
@@ -54,13 +55,16 @@ func TestGet(t *testing.T) {
 		const key = "get-bytes"
 		data := make([]byte, 1)
 
-		client.Data().Set(context.TODO(), &pb.SetRequest{
+		client.Data().Set(context.TODO(), &SetRequest{
 			Db:   Db,
 			Key:  "get-bytes",
 			Data: data,
 		})
 
-		res, err := client.Data().Get(context.TODO(), Db, key)
+		res, err := client.Data().Get(context.TODO(), &KeyRequest{
+			Db:  Db,
+			Key: key,
+		})
 
 		assert.Nil(t, err, fmt.Sprintf("%v", err))
 		assert.Equal(t, data, res.Data)

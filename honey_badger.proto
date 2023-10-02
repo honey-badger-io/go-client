@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/meeron/honey-badger/pb";
-option csharp_namespace = "HoneyBadger.Client.Hb";
+option go_package = "github.com/honey-badger-io/go-client/hb";
 
 package hb;
 
