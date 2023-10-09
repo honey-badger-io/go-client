@@ -51,10 +51,10 @@ func TestSet(t *testing.T) {
 			SetWithTtl(key, make([]byte, 1), 1)
 		time.Sleep(1500 * time.Millisecond)
 
-		res, _ := client.Data(context.TODO(), Db).Get(key)
+		_, hit, _ := client.Data(context.TODO(), Db).Get(key)
 
 		assert.Nil(t, err, fmt.Sprintf("%v", err))
-		assert.False(t, res.Hit)
+		assert.False(t, hit)
 	})
 }
 
@@ -71,10 +71,10 @@ func TestGet(t *testing.T) {
 
 		data.Set(key, value)
 
-		res, err := data.Get(key)
+		resultData, _, err := data.Get(key)
 
 		assert.Nil(t, err, fmt.Sprintf("%v", err))
-		assert.Equal(t, data, res.Data)
+		assert.Equal(t, value, resultData)
 	})
 }
 
@@ -90,10 +90,10 @@ func TestDelete(t *testing.T) {
 		data.Set(key, make([]byte, 1))
 
 		err := data.Delete(key)
-		res, _ := data.Get(key)
+		_, hit, _ := data.Get(key)
 
 		assert.Nil(t, err, fmt.Sprintf("%v", err))
-		assert.False(t, res.Hit)
+		assert.False(t, hit)
 	})
 
 	t.Run("should delete by prefix", func(t *testing.T) {
@@ -104,11 +104,11 @@ func TestDelete(t *testing.T) {
 		data.Set(fmt.Sprintf("%s%d", prefix, 2), make([]byte, 2))
 
 		err := data.DeleteByPrefix(prefix)
-		res1, _ := data.Get(fmt.Sprintf("%s%d", prefix, 1))
-		res2, _ := data.Get(fmt.Sprintf("%s%d", prefix, 2))
+		_, hit1, _ := data.Get(fmt.Sprintf("%s%d", prefix, 1))
+		_, hit2, _ := data.Get(fmt.Sprintf("%s%d", prefix, 2))
 
 		assert.Nil(t, err, fmt.Sprintf("%v", err))
-		assert.False(t, res1.Hit)
-		assert.False(t, res2.Hit)
+		assert.False(t, hit1)
+		assert.False(t, hit2)
 	})
 }

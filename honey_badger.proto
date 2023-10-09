@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/honey-badger-io/go-client/hb";
+option go_package = "github.com/honey-badger-io/go-client/pb";
 
 package hb;
 
