@@ -13,8 +13,12 @@ type Client struct {
 	data DataClient
 }
 
-func (c *Client) Data() DataClient {
-	return c.data
+func (c *Client) Data(ctx context.Context, db string) *Data {
+	return &Data{
+		c:   c.data,
+		ctx: ctx,
+		db:  db,
+	}
 }
 
 func (c *Client) Ping(ctx context.Context) (string, error) {
