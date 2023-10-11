@@ -2,6 +2,7 @@ package hb
 
 import (
 	"context"
+	"io"
 
 	"github.com/honey-badger-io/go-client/pb"
 )
@@ -11,6 +12,8 @@ type Data struct {
 	c   pb.DataClient
 	db  string
 }
+
+type ReadCallback func(key string, data []byte) error
 
 func (d *Data) Get(key string) ([]byte, bool, error) {
 	res, err := d.c.Get(d.ctx, &pb.KeyRequest{
@@ -58,4 +61,47 @@ func (d *Data) DeleteByPrefix(prefix string) error {
 		Prefix: prefix,
 	})
 	return err
+}
+
+func (d *Data) NewSendStream() (*SendStream, error) {
+	stream, err := d.c.CreateSendStream(d.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// First message need to have database name
+	err = stream.Send(&pb.SendStreamReq{
+		Db: d.db,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &SendStream{s: stream}, nil
+}
+
+func (d *Data) Read(prefix string, callback ReadCallback) error {
+	stream, err := d.c.CreateReadStream(d.ctx, &pb.ReadStreamReq{
+		Db:     d.db,
+		Prefix: &prefix,
+	})
+	if err != nil {
+		return err
+	}
+	defer stream.CloseSend()
+
+	for {
+		itm, err := stream.Recv()
+
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		if err := callback(itm.Key, itm.Data); err != nil {
+			return err
+		}
+	}
 }

@@ -112,3 +112,52 @@ func TestDelete(t *testing.T) {
 		assert.False(t, hit2)
 	})
 }
+
+func TestSendStream(t *testing.T) {
+	client, err := NewClient("127.0.0.1:18950")
+	if err != nil {
+		panic(err)
+	}
+
+	t.Run("should send data using stream", func(t *testing.T) {
+		stream, err := client.Data(context.TODO(), Db).NewSendStream()
+		if err != nil {
+			panic(err)
+		}
+
+		err1 := stream.Send("send-stream-1", make([]byte, 1))
+		err2 := stream.Send("send-stream-2", make([]byte, 1))
+		errClose := stream.Close()
+
+		assert.Nil(t, err1, fmt.Sprintf("%v", err1))
+		assert.Nil(t, err2, fmt.Sprintf("%v", err2))
+		assert.Nil(t, errClose, fmt.Sprintf("%v", errClose))
+	})
+}
+
+func TestReadByPrefix(t *testing.T) {
+	client, err := NewClient("127.0.0.1:18950")
+	if err != nil {
+		panic(err)
+	}
+
+	t.Run("should read data by stream", func(t *testing.T) {
+		data := client.Data(context.TODO(), Db)
+
+		stream, _ := data.NewSendStream()
+		stream.Send("read-stream-1", make([]byte, 1))
+		stream.Send("read-stream-2", make([]byte, 2))
+		stream.Close()
+
+		result := make(map[string][]byte)
+
+		err := data.Read("read-stream", func(key string, data []byte) error {
+			result[key] = data
+			return nil
+		})
+
+		assert.Nil(t, err, fmt.Sprintf("%v", err))
+		assert.Equal(t, make([]byte, 1), result["read-stream-1"])
+		assert.Equal(t, make([]byte, 2), result["read-stream-2"])
+	})
+}
