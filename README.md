@@ -10,22 +10,43 @@ go get github.com/honey-badger-io/go-client
 
 ### Usage
 ```go
-	client, err := NewClient("127.0.0.1:18950")
+package main
+
+import (
+	"context"
+	"fmt"
+
+	hb "github.com/honey-badger-io/go-client"
+)
+
+func main() {
+	client, err := hb.NewClient("127.0.0.1:18950")
 	if err != nil {
 		panic(err)
 	}
 
-    // Set data
-    data := make([]byte, 1)
-    err := client.Data(context.TODO(), "my-database").Set("some-key", data)
-    if err != nil {
-        panic(err)
+	errSet := client.Data(context.Background(), "database").Set("some-key", []byte("some data"))
+	if errSet != nil {
+		panic(errSet)
 	}
 
-    // Get data
-    data, err := client.Data(context.TODO(), "my-database").Get("some-key")
-    if err != nil {
-        panic(err)
+	data, hit, errGet := client.Data(context.Background(), "database").Get("some-key")
+	if errGet != nil {
+		panic(errGet)
 	}
-    fmt.Printf("%v\n", data)
+
+	fmt.Printf("Data: %v\n", string(data))
+	fmt.Printf("Hit: %v\n", hit)
+}
+```
+### Run demo
+First you must run server. Either run it from [source code](https://github.com/meeron/honey-badger) or run as docker container:
+```
+docker run --name honey-badger -p 18950:18950 -d meeron/honey-badger:latest
+```
+Then run demo program:
+```sh
+$ go run .
+Data: some data
+Hit: true
 ```
