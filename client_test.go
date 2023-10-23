@@ -13,6 +13,10 @@ const (
 	Db = "go-client-tests"
 )
 
+var CreateOpt = CreateDbOptions{
+	InMemory: true,
+}
+
 func TestPing(t *testing.T) {
 	client, err := NewClient("127.0.0.1:18950")
 	if err != nil {
@@ -34,6 +38,8 @@ func TestSet(t *testing.T) {
 		panic(err)
 	}
 	defer client.Close()
+
+	client.Db(context.TODO(), Db).EnsureDb(CreateOpt)
 
 	t.Run("should set data", func(t *testing.T) {
 		err := client.
@@ -64,6 +70,8 @@ func TestGet(t *testing.T) {
 		panic(err)
 	}
 
+	client.Db(context.TODO(), Db).EnsureDb(CreateOpt)
+
 	t.Run("should get data", func(t *testing.T) {
 		const key = "get-bytes"
 		value := make([]byte, 1)
@@ -83,6 +91,8 @@ func TestDelete(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
+	client.Db(context.TODO(), Db).EnsureDb(CreateOpt)
 
 	t.Run("should delete by key", func(t *testing.T) {
 		key := "delete-by-key"
@@ -119,6 +129,8 @@ func TestSendStream(t *testing.T) {
 		panic(err)
 	}
 
+	client.Db(context.TODO(), Db).EnsureDb(CreateOpt)
+
 	t.Run("should send data using stream", func(t *testing.T) {
 		stream, err := client.Data(context.TODO(), Db).NewSendStream()
 		if err != nil {
@@ -141,6 +153,8 @@ func TestReadByPrefix(t *testing.T) {
 		panic(err)
 	}
 
+	client.Db(context.TODO(), Db).EnsureDb(CreateOpt)
+
 	t.Run("should read data by stream", func(t *testing.T) {
 		data := client.Data(context.TODO(), Db)
 
@@ -159,5 +173,54 @@ func TestReadByPrefix(t *testing.T) {
 		assert.Nil(t, err, fmt.Sprintf("%v", err))
 		assert.Equal(t, make([]byte, 1), result["read-stream-1"])
 		assert.Equal(t, make([]byte, 2), result["read-stream-2"])
+	})
+}
+
+func TestDb(t *testing.T) {
+	client, err := NewClient("127.0.0.1:18950")
+	if err != nil {
+		panic(err)
+	}
+	const TestDb = "test-create-db"
+
+	t.Run("should call create db", func(t *testing.T) {
+		dbClient := client.Db(context.TODO(), TestDb)
+
+		err := dbClient.Create(CreateDbOptions{
+			InMemory: true,
+		})
+
+		assert.Nil(t, err, fmt.Sprintf("%v", err))
+	})
+
+	t.Run("should call drop db", func(t *testing.T) {
+		dbClient := client.Db(context.TODO(), TestDb)
+
+		err := dbClient.Drop()
+
+		assert.Nil(t, err, fmt.Sprintf("%v", err))
+	})
+
+	t.Run("should call exists db", func(t *testing.T) {
+		dbClient := client.Db(context.TODO(), "test-db-exists")
+
+		dbClient.Create(CreateOpt)
+		defer dbClient.Drop()
+
+		result, err := dbClient.Exists()
+
+		assert.Nil(t, err, fmt.Sprintf("%v", err))
+		assert.True(t, result)
+	})
+
+	t.Run("should call ensure db", func(t *testing.T) {
+		dbClient := client.Db(context.TODO(), "test-db-ensure")
+
+		dbClient.Create(CreateOpt)
+		defer dbClient.Drop()
+
+		err := dbClient.EnsureDb(CreateOpt)
+
+		assert.Nil(t, err, fmt.Sprintf("%v", err))
 	})
 }

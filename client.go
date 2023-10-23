@@ -12,11 +12,20 @@ type Client struct {
 	conn *grpc.ClientConn
 	sys  pb.SysClient
 	data pb.DataClient
+	db   pb.DbClient
 }
 
 func (c *Client) Data(ctx context.Context, db string) *Data {
 	return &Data{
 		c:   c.data,
+		ctx: ctx,
+		db:  db,
+	}
+}
+
+func (c *Client) Db(ctx context.Context, db string) *DbClient {
+	return &DbClient{
+		d:   c.db,
 		ctx: ctx,
 		db:  db,
 	}
@@ -44,6 +53,7 @@ func NewClient(target string) (*Client, error) {
 	client := &Client{
 		sys:  pb.NewSysClient(conn),
 		data: pb.NewDataClient(conn),
+		db:   pb.NewDbClient(conn),
 		conn: conn,
 	}
 
